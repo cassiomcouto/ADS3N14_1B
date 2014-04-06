@@ -1,5 +1,6 @@
 package batalha.view;
 
+
 public class BatalhaView {
 
 
