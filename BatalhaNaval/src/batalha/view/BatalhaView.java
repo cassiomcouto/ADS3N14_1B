@@ -1,5 +1,6 @@
 package batalha.view;
 
+
 public class BatalhaView {
 
 
@@ -9,12 +10,12 @@ public class BatalhaView {
 		for (int[] a : array) {
 			System.out.print(b++ + " ");
 			
-                        for (int s : a) {
-				if (s == -1) {
+            for (int s : a) {
+				if (s < 0) {
 					System.out.print("~ ");
 				} else if (s == 0) {
 					System.out.print("x ");
-				} else if (s == 1) {
+				} else if (s > 0) {
 					System.out.print("O ");
 				}
 			}

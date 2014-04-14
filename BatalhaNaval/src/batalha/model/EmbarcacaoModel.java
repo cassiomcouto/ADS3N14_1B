@@ -1,212 +1,161 @@
 package batalha.model;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
-import java.util.Scanner;
 
-import batalha.model.entidade.Embarcacao;
-import batalha.model.entidade.Tabuleiro;
-import batalha.view.BatalhaView;
+import batalha.model.entidade.AircraftCarrier;
+import batalha.model.entidade.Axis;
+import batalha.model.entidade.Board;
+import batalha.model.entidade.Coordinate;
+import batalha.model.entidade.Destroyer;
+import batalha.model.entidade.Frigate;
+import batalha.model.entidade.IBoard;
+import batalha.model.entidade.IShip;
+import batalha.model.entidade.Submarine;
+import batalha.model.entidade.TorpedoBoat;
+import batalha.utils.RandomEnumUtils;
+import batalha.utils.StringUtils;
 
 public class EmbarcacaoModel {
 
-	private Tabuleiro tabuleiro, rascunho;
-	private int linha, coluna;
-	private Embarcacao portaAviao, destroyer, fragata, submarino, torpedeiro;
-	private BatalhaView view;
-	private Scanner input;
-	private Random random;
+	private static final int TOTAL_SHIPS = 5;
 
-	public EmbarcacaoModel() {
-		this.tabuleiro = new Tabuleiro();
-		this.rascunho = new Tabuleiro();
-		this.portaAviao = new Embarcacao(5, 2);
-		this.destroyer = new Embarcacao(8, 2);
-		this.fragata = new Embarcacao(6, 2);
-		this.submarino = new Embarcacao(5, 3);
-		this.torpedeiro = new Embarcacao(6, 2);
-                
-		this.view = new BatalhaView();
-		this.input = new Scanner(System.in);
-		random = new Random();
+	private static final int BONUS_SHOTS = 5;
+	
+	private IBoard board;
+	
+	private IShip[] ships;
+	
+	private List<Coordinate> moves;
 
-	}
-
-
-	public int[][] iniciaJogo() {
-		int[][] array = new int[10][10];
-
-		for (linha = 0; linha < tabuleiro.getTabuleiro().length; linha++) {
-
-			for (coluna = 0; coluna < tabuleiro.getTabuleiro()[linha].length; coluna++) {
-				array[linha][coluna] = -1;
-			}
-
-		}
-		this.tabuleiro.setTabuleiro(array);
-		return this.tabuleiro.getTabuleiro();
-	}
-
-	public void jogada() {
-		System.out.println("Informe o número da linha:\n");
-		tabuleiro.setLinha(input.nextInt());
-		System.out.println("Informe a letra da coluna:\n");
-		tabuleiro.setLetras(input.next());
-		for (int teste = 0; teste < tabuleiro.getColun().length; teste++) {
-			String letra = this.tabuleiro.getColun()[teste];
-			if (letra.equalsIgnoreCase(this.tabuleiro.getLetra())) {
-				this.tabuleiro.setColuna(teste);
-			}
-		}
-
-	}
-
-
-	public void geraEmbarcacao() {
-		
-		geraEmbarcacao(this.submarino);
-
+	public EmbarcacaoModel() throws Exception {
+		this.iniciaJogo();
 	}
 	
-	private void geraEmbarcacao(Embarcacao ship) {
-		int[][] embarcacao = new int[ship.getLinha()][ship.getColuna()];
-
-		for (int cont = 0; cont < ship.getEmbarcacao().length; cont++) {
-			mountEmbarcacao(embarcacao[cont]);
-			
-			while (alreadyExistsCoordinate(embarcacao, cont)){
-				mountEmbarcacao(embarcacao[cont]);
-			}
+	private void buildShipsOnTheBoard() throws Exception {
+		if (this.ships == null) {
+			return;
 		}
-		ship.setEmbarcacao(embarcacao);
+		
+		for (IShip ship : this.ships) {
+			this.buildShipUntilIsUniqueLocalized(ship);
+			System.out.println("Ship Localized: " + ship.toString());
+		}
 	}
 
+	private void buildShipUntilIsUniqueLocalized(final IShip ship) throws Exception {
+		boolean buildShip = ship.buildShip((new Random()).nextInt(Board.BOARD_LINE_LIMIT), (new Random()).nextInt(Board.BOARD_COLUMN_LIMIT), RandomEnumUtils.random(Axis.class));
+		if ((buildShip && this.isAlreadyLocalizedInThisPlace(ship)) || !buildShip) { 
+			buildShipUntilIsUniqueLocalized(ship);
+		}
+	}
 
-	private boolean alreadyExistsCoordinate(int[][] embarcacao, int shipId) {
-		for (int anterior = 0; anterior < shipId; anterior++) {
-			boolean alreadyExists = true;
-			
-			for (int index = 0; index < embarcacao[shipId].length - 1; index++) {
-				if (embarcacao[shipId][index] != embarcacao[anterior][index]) {
-					alreadyExists = false;
-					break;
+	private boolean isAlreadyLocalizedInThisPlace(IShip ship) {
+		for (Coordinate coordinate : ship.getCoordinates()) {
+			for (IShip otherShip : this.ships) {
+				if (!ship.equals(otherShip) && otherShip.isLocated(coordinate)) {
+					return true;
 				}
 			}
-			
-			if (alreadyExists) {
-				return true;
-			}
 		}
 		return false;
 	}
 
-
-	private void mountEmbarcacao(int[] embarcacao) {
-		for (int cont = 0; cont < embarcacao.length - 1; cont++) {
-			embarcacao[cont] = random.nextInt(10);
-		}
-		embarcacao[embarcacao.length - 1] = 0;
+	private IShip[] getShips() {
+		IShip[] ships = new IShip[TOTAL_SHIPS];
+		
+		ships[0] = new Submarine();
+		ships[1] = new TorpedoBoat();
+		ships[2] = new Destroyer();
+		ships[3] = new Frigate();
+		ships[4] = new AircraftCarrier();
+		
+		return ships;
 	}
 
-	public boolean testaJogada() {
-		int[][] array = this.submarino.getEmbarcacao();
+
+	private int[][] iniciaJogo() throws Exception {
+		this.board = new Board();
 		
-		for (int embarcacao = 0; embarcacao < submarino.getEmbarcacao().length; embarcacao++) {
-			if (hit(this.tabuleiro.getLinha(), this.tabuleiro.getColuna(), this.submarino.getEmbarcacao()[embarcacao])) {
-				
-				System.out.printf("Você acertou o tiro.\n");
-				
-				array[embarcacao][0] = this.submarino.getEmbarcacao()[embarcacao][0];
-				array[embarcacao][1] = this.submarino.getEmbarcacao()[embarcacao][1];
-				array[embarcacao][2] = 1;
-				
-				System.out.printf("%d %d %d\n", array[embarcacao][0], array[embarcacao][1], array[embarcacao][2]);
-				
-				this.tabuleiro.setTiros(this.tabuleiro.getTiros() + 5);
-				this.tabuleiro.setAcertos(this.tabuleiro.getAcertos() + 1);
-				return true;
-			}
-			
-			System.out.printf("%d %d %d\n", array[embarcacao][0], array[embarcacao][1], array[embarcacao][2]);
-		}
+		this.ships = this.getShips();
 		
-		this.submarino.setEmbarcacao(array);
-		this.tabuleiro.setTiros(this.tabuleiro.getTiros() - 1);
-		this.tabuleiro.setErros(this.tabuleiro.getErros() + 1);
-		return false;
+		this.buildShipsOnTheBoard();
+		
+		this.moves = new ArrayList<Coordinate>();
+		
+		return this.board.getBoard();
 	}
 	
-	private boolean hit(int x, int y, int[] ship) {
-		return ship[0] == x && ship[1] == y;
+	private Coordinate jogada(int line, String column) {
+		int indexLine = line;
+		int indexColumn = Character.isDigit(column.charAt(0)) ? Integer.valueOf(String.valueOf(column.charAt(0))) : StringUtils.toAlphabeticNumber(String.valueOf(column.charAt(0))) - 1;
+		
+		final Coordinate coordinate = new Coordinate(indexLine, indexColumn);
+		this.getMoves().add(coordinate);
+		return coordinate;
 	}
-
+	
+	public boolean testaJogada(int line, String column) {
+		final Coordinate coordinate = jogada(line, column);
+		
+		for (IShip ship : this.ships) {
+			
+			if (ship.hit(coordinate)) {
+				this.board.addShots(BONUS_SHOTS);
+				this.board.increaseHits();
+				coordinate.setHit(Boolean.TRUE);
+				return true;
+			}
+		}
+		
+		this.board.decrementShots();
+		this.board.increaseErrors();
+		return false;
+	}
 
 	public boolean testaFim() {
-		boolean valida = false;
-		int cont = 0;
-		int[][] embarcacao = this.submarino.getEmbarcacao();
-		for (int linha = 0; linha < this.submarino.getEmbarcacao().length; linha++) {
-			if (embarcacao[linha][2] == 1) {
-				cont = cont + 1;
+		for (IShip ship : this.ships) {
+			if (!ship.isDestroyed()) {
+				return false;
 			}
 		}
-		if (this.submarino.getLinha() == cont) {
-			valida = true;
-		}
 
-		return valida;
-
+		return true;
 	}
 
 
-	public int acerto() {
-		return this.tabuleiro.getAcertos();
+	public int hits() {
+		return this.board.getHits();
 	}
 
-	public int erros() {
-		return this.tabuleiro.getErros();
-	}
-
-
-	public int tiros() {
-		return this.tabuleiro.getTiros();
+	public int errors() {
+		return this.board.getErrors();
 	}
 
 
-	public int[][] atualizaTabuleiro(boolean retorno) {
-		int[][] tabuleiro = new int[10][10];
+	public int shots() {
+		return this.board.getShots();
+	}
 
-		if (retorno) {
-			for (int linha = 0; linha < this.tabuleiro.getTabuleiro().length; linha++) {
-				for (int coluna = 0; coluna < this.tabuleiro.getTabuleiro()[linha].length; coluna++) {
-					if (linha == this.tabuleiro.getLinha()
-							&& coluna == this.tabuleiro.getColuna()) {
-						tabuleiro[this.tabuleiro.getLinha()][this.tabuleiro
-								.getColuna()] = 1;
-					} else {
-						tabuleiro[linha][coluna] = this.tabuleiro
-								.getTabuleiro()[linha][coluna];
-					}
-				}
 
-			}
-			this.tabuleiro.setTabuleiro(tabuleiro);
-		} else {
-			for (int linha = 0; linha < this.tabuleiro.getTabuleiro().length; linha++) {
-				for (int coluna = 0; coluna < this.tabuleiro.getTabuleiro()[linha].length; coluna++) {
-					if (linha == this.tabuleiro.getLinha()
-							&& coluna == this.tabuleiro.getColuna()) {
-						tabuleiro[this.tabuleiro.getLinha()][this.tabuleiro
-								.getColuna()] = 0;
-					} else {
-						tabuleiro[linha][coluna] = this.tabuleiro
-								.getTabuleiro()[linha][coluna];
-					}
+	public int[][] atualizaTabuleiro() {
+		final Coordinate move = this.getLastMove();
+		
+		this.board.getBoard()[move.getLine()][move.getColumn()] = move.isHit() ? 1 : 0;
+		
+		return this.board.getBoard();
+	}
 
-				}
+	public Coordinate getLastMove() {
+		return this.moves.get(this.moves.size() - 1);
+	}
 
-			}
-			this.tabuleiro.setTabuleiro(tabuleiro);
-		}
-		return this.tabuleiro.getTabuleiro();
+	public int[][] getBoard() {
+		return this.board.getBoard();
+	}
+
+	public List<Coordinate> getMoves() {
+		return moves;
 	}
 }
