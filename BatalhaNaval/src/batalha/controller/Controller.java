@@ -1,11 +1,15 @@
 package batalha.controller;
 
+<<<<<<< HEAD
 import java.util.Scanner;
 
+=======
+>>>>>>> 40d74f39c3341d55fbd5c300a60bdb1982eb31c9
 import batalha.model.EmbarcacaoModel;
 import batalha.view.BatalhaView;
 
 public class Controller {
+<<<<<<< HEAD
 	
 	public static void main(String[] args) {
 		@SuppressWarnings("resource")
@@ -38,6 +42,28 @@ public class Controller {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+=======
+
+	public static void main(String[] args) {
+		BatalhaView view = new BatalhaView();
+		EmbarcacaoModel model = new EmbarcacaoModel();
+
+		view.imprimeTabuleiro(model.iniciaJogo());
+		model.geraEmbarcacao();
+		do {
+			model.jogada();
+			
+			view.imprimeTabuleiro(model.atualizaTabuleiro(model.testaJogada()));
+
+			System.out.println(model.testaFim());
+
+			view.imprimeDisparos(model.tiros());
+			view.imprimeResultado(model.acerto(), model.erros(), model.acerto() + model.erros());
+		} while (model.tiros() > 0 && model.testaFim() == false);
+
+		System.out.println("Fim do jogo!");
+
+>>>>>>> 40d74f39c3341d55fbd5c300a60bdb1982eb31c9
 	}
 
 }
