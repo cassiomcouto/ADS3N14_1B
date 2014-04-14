@@ -1,7 +1,33 @@
-<?xml version="1.0" encoding="UTF-8"?>
+##!/bin/bash
+CLIENT = build
+#Arquivo de controle do TAR
+CONTROLE=”/etc/backup/incremental.txt”
+#PASTAS QUE DEVEM SER FEITO BACKUP
+PASTAS=”/etc/bacula/client/client-build.txt”
+#LOCAL ONDE SERÁ SALVO BACKUP
+LOCALBACKUP=”/backup/vms”
+#DIA DA SEMANA DE 0 A 7, ONDE 0 E 7 SÃO DOMINGO, 1 SEGUNDA, ETC.
+DIA=`date +%w`
 
-<classpath>
-	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="output" path="bin"/>
-</classpath>
+completo()
+{
+echo 1 >/etc/dia.txt
+rm -rf $CONTROLE
+mv $LOCALBACKUP/$CLIENT-backupfull.tar $LOCALBACKUP/$CLIENT-backupfull.tar.old
+tar -cf $LOCALBACKUP/$CLIENT-backupfull.tar -T $PASTAS -g $CONTROLE –exclude /etc/backup/*
+}
+
+incremental()
+{
+mv $LOCALBACKUP/backup.inc$DIA.tar $LOCALBACKUP/backup.inc$DIA.tar.old
+tar -cf $LOCALBACKUP/backup.inc$DIA.tar -T $PASTAS -g $CONTROLE –exclude /etc/backup/*
+}
+	if [ $DIA == 1 ];then
+		completo
+	else
+		incremental
+fi
+
+# -T = Obtem nomes para criar a partir do arquivo.
+# -g = ARQUIVO que contem as listas dos arquivos para o novo backup incremental
+# -exclude = 
